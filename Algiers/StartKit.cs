@@ -282,7 +282,7 @@ namespace Algiers.StartKit
         bool playing = false;
         
         Parser parser;
-        String inputChar = ">";
+        String inputChar = "> ";
 
         public WebKit() {}
         public WebKit(String inputChar)

@@ -1,0 +1,89 @@
+﻿@page "/"
+@inject IJSRuntime JS
+
+<div id="container">
+    <div id="output-div">
+        <pre id="output-box">@output</pre>
+    </div>
+    <div id="input-div">
+        <span>> </span>
+        <input id="input-box" type="text" autocomplete="off" spellcheck="false" @bind="input" @bind:event="oninput" @onkeydown="OnKeyDown" @onkeydown:preventDefault="supress"/>	
+    </div>
+</div>
+
+@using Algiers
+@using Algiers.StartKit
+@code {
+    private string input;
+    private string output = "Press Enter to Start.";
+    private bool started = false;
+    private World world = new Game().SetWorld();
+    private WebKit kit = new WebKit();
+    private bool supress = false;
+    private List<string> history = [];
+    private int h_i = -1;
+    private int h_l = 0;
+    const int h_max = 20;
+
+    private void OnKeyDown(KeyboardEventArgs args)
+    {
+        supress = false;
+        if (args.Code == "Enter")
+        {
+            if (!started)
+            {
+                started = true;
+                output = "";
+            }
+            if (!string.IsNullOrEmpty(input))
+            {
+                history = [input, ..history.Take(h_max - 1)];
+                h_l = h_l == h_max ? h_l : h_l + 1;
+            }
+            output += kit.Loop(input, world);
+            output = string.Join(Parser.Clear, output.Split(Parser.Clear).TakeLast(500));
+            input = "";
+        }
+        else if (started) {
+            if (args.Code == "ArrowUp")
+            {
+                supress = true;
+                if (h_i < h_l - 1)
+                {
+                    input = history[++h_i];
+                }
+             Console.WriteLine((h_i, h_l));
+            }
+            else if (args.Code == "ArrowDown")
+            {
+                supress = true;
+                if (h_i > 0)
+                {
+                    input = history[--h_i];
+                }
+                else if (h_i == 0)
+                {
+                    h_i--;
+                    input = "";
+                }
+                Console.WriteLine((h_i, h_l));
+            }
+            else if (args.Code.StartsWith("Key"))
+            {
+                h_i = -1;
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("focusInput");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("scrollTerminal");
+        }
+    }
+}
